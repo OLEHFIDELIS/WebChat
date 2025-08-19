@@ -1,0 +1,188 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Admin–Member Chat Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 20px auto; }
+    .row { display: flex; gap: 16px; }
+    .col { flex: 1; border: 1px solid #ddd; padding: 12px; border-radius: 8px; }
+    ul { list-style: none; padding-left: 0; }
+    li { padding: 6px 8px; border-bottom: 1px solid #eee; cursor: pointer; }
+    li.room.active { background: #eef; }
+    .msg { padding: 6px 10px; border-radius: 6px; margin: 4px 0; background: #f8f8f8; }
+    .msg.me { background: #e7f3ff; }
+    input, button, select { padding: 8px; margin: 4px 0; width: 100%; box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <h1>Admin–Member Chat Demo</h1>
+
+  <div class="row">
+    <div class="col">
+      <h2>Register</h2>
+      <input id="reg-username" placeholder="username" />
+      <input id="reg-password" placeholder="password" type="password" />
+      <select id="reg-role">
+        <option value="member">member</option>
+        <option value="admin">admin</option>
+      </select>
+      <button id="btn-register">Register</button>
+
+      <h2>Login</h2>
+      <input id="login-username" placeholder="username" />
+      <input id="login-password" placeholder="password" type="password" />
+      <button id="btn-login">Login</button>
+
+      <div id="whoami"></div>
+    </div>
+
+    <div class="col">
+      <h2>Rooms</h2>
+      <div id="admin-tools" style="display:none;">
+        <h3>Create Group (admin)</h3>
+        <input id="group-name" placeholder="Room name" />
+        <input id="group-members" placeholder="Member usernames (comma)" />
+        <button id="btn-create-group">Create Group</button>
+
+        <h3>Direct Chat (admin → member)</h3>
+        <input id="dm-member" placeholder="Member username" />
+        <button id="btn-create-dm">Open DM</button>
+      </div>
+
+      <ul id="rooms"></ul>
+    </div>
+
+    <div class="col">
+      <h2>Chat</h2>
+      <div id="chat-title">No room selected</div>
+      <div id="messages" style="height:320px; overflow:auto; border:1px solid #ddd; padding:8px; border-radius:6px;"></div>
+      <input id="msg-input" placeholder="Type a message..." />
+      <button id="btn-send">Send</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const api = (path, opts={}) =>
+      fetch(path, { headers: { 'Content-Type':'application/json', ...(token?{Authorization:'Bearer '+token}:{}) }, ...opts }).then(r => r.json());
+
+    let token = null;
+    let me = null;
+    let rooms = [];
+    let currentRoomId = null;
+    let socket = null;
+
+    // ------------------------
+    // Helper for member usernames
+    let allMembers = [];
+    async function fetchMembers() {
+      if (!me || me.role !== 'admin') return;
+      allMembers = await api('/users'); // [{_id, username}, ...]
+    }
+
+    function renderRooms() {
+      const ul = document.getElementById('rooms');
+      ul.innerHTML = '';
+      rooms.forEach(r => {
+        const li = document.createElement('li');
+        li.textContent = `#${r.id} ${r.name} ${r.isDirect ? '(DM)' : ''}`;
+        li.className = 'room' + (r.id === currentRoomId ? ' active' : '');
+        li.onclick = () => openRoom(r.id, r.name);
+        ul.appendChild(li);
+      });
+    }
+
+    async function refreshRooms() {
+      rooms = await api('/rooms');
+      renderRooms();
+    }
+
+    async function openRoom(id, name) {
+      currentRoomId = id;
+      document.getElementById('chat-title').textContent = `Room: ${name} (#${id})`;
+      const msgs = await api(`/rooms/${id}/messages`);
+      const box = document.getElementById('messages');
+      box.innerHTML = '';
+      msgs.forEach(m => {
+        const div = document.createElement('div');
+        div.className = 'msg' + (m?.sender?.id === me?.id ? ' me' : '');
+        div.textContent = `[${new Date(m.createdAt).toLocaleTimeString()}] ${m?.sender?.username || '??'}: ${m.content}`;
+        box.appendChild(div);
+      });
+      box.scrollTop = box.scrollHeight;
+      renderRooms();
+    }
+
+    function connectSocket() {
+      if (socket) socket.disconnect();
+      socket = io({ auth: { token } });
+      socket.on('connect', () => console.log('socket connected'));
+      socket.on('message:new', (m) => {
+        if (m.roomId !== currentRoomId) return;
+        const box = document.getElementById('messages');
+        const div = document.createElement('div');
+        div.className = 'msg' + (m.senderId === me.id ? ' me' : '');
+        div.textContent = `[${new Date(m.createdAt).toLocaleTimeString()}] ${m.senderName}: ${m.content}`;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+      });
+    }
+
+    document.getElementById('btn-register').onclick = async () => {
+      const username = document.getElementById('reg-username').value.trim();
+      const password = document.getElementById('reg-password').value.trim();
+      const role = document.getElementById('reg-role').value;
+      const res = await api('/auth/register', { method: 'POST', body: JSON.stringify({ username, password, role }) });
+      alert(res.error || `Registered #${res.id} as ${res.role}`);
+    };
+
+    document.getElementById('btn-login').onclick = async () => {
+      const username = document.getElementById('login-username').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+      const res = await api('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+      if (res.error) return alert(res.error);
+      token = res.token;
+      me = res.user;
+      document.getElementById('whoami').textContent = `Logged in as ${me.username} (${me.role}) [id=${me.id}]`;
+      document.getElementById('admin-tools').style.display = me.role === 'admin' ? 'block' : 'none';
+      connectSocket();
+      refreshRooms();
+      if (me.role === 'admin') await fetchMembers(); // fetch member usernames
+    };
+
+    document.getElementById('btn-create-group').onclick = async () => {
+      const name = document.getElementById('group-name').value.trim();
+      const usernames = (document.getElementById('group-members').value || '').split(',').map(s => s.trim()).filter(Boolean);
+      const memberIds = usernames.map(u => {
+        const user = allMembers.find(x => x.username === u);
+        return user ? user._id : null;
+      }).filter(Boolean);
+
+      const res = await api('/rooms', { method: 'POST', body: JSON.stringify({ name, memberIds }) });
+      if (res.error) return alert(res.error);
+      await refreshRooms();
+    };
+
+    document.getElementById('btn-create-dm').onclick = async () => {
+      const username = document.getElementById('dm-member').value.trim();
+      const member = allMembers.find(u => u.username === username);
+      if (!member) return alert('Member not found');
+      const res = await api('/rooms/direct', { method: 'POST', body: JSON.stringify({ memberId: member._id }) });
+      if (res.error) return alert(res.error);
+      await refreshRooms();
+    };
+
+    document.getElementById('btn-send').onclick = async () => {
+      if (!currentRoomId) return alert('Select a room first');
+      const content = document.getElementById('msg-input').value.trim();
+      if (!content) return;
+      socket.emit('message:send', { roomId: currentRoomId, content }, (ack) => {
+        if (!ack?.ok) alert(ack.error || 'Send failed');
+      });
+      document.getElementById('msg-input').value = '';
+    };
+  </script>
+</body>
+</html>

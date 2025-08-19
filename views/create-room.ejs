@@ -1,0 +1,42 @@
+<%- include("partials/header", { title: "Create Room" }) %>
+
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card shadow-lg border-0 rounded-4">
+      <div class="card-body p-5">
+        <h3 class="text-center mb-4 fw-bold">Create New Room</h3>
+
+        <form method="POST" action="/rooms/create">
+          <!-- Room Name -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Room Name</label>
+            <input type="text" name="name" class="form-control" placeholder="Enter room name" required>
+          </div>
+
+          <!-- Members -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Add Members</label>
+            <select name="members" class="form-select" multiple required>
+              <% users.forEach(u => { %>
+                <option value="<%= u._id %>"><%= u.nickname %></option>
+              <% }) %>
+            </select>
+            <div class="form-text">Hold <kbd>Ctrl</kbd> (or <kbd>Cmd</kbd> on Mac) to select multiple members.</div>
+          </div>
+
+          <!-- Buttons -->
+          <div class="d-flex justify-content-between mt-4">
+            <a href="/chat" class="btn btn-outline-secondary">
+              <i class="fas fa-arrow-left"></i> Back
+            </a>
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-plus-circle"></i> Create Room
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include("partials/footer") %>

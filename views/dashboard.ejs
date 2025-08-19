@@ -1,0 +1,68 @@
+<%- include("partials/header", { title: "Chat", user }) %>
+
+<div class="chat-shell">
+  <!-- Left: nav -->
+  <aside class="left-rail">
+    <div class="rail-section">
+      <div class="section-title">Conversations</div>
+      <div class="searchbox">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input id="roomSearch" placeholder="Search rooms…" />
+      </div>
+      <ul id="roomList" class="room-list">
+        <% rooms.forEach(room => { %>
+          <li class="room-item" data-id="<%= room._id %>">
+            <div class="room-name"><%= room.name %></div>
+            <div class="room-meta"><%= room.type %></div>
+          </li>
+        <% }) %>
+      </ul>
+      <% if (user.role === 'admin') { %>
+        <a class="btn btn-success w-100 mt-2" href="/rooms/create">
+          <i class="fa-solid fa-plus"></i> New room
+        </a>
+      <% } %>
+    </div>
+  </aside>
+
+  <!-- Middle: messages -->
+  <section class="chat-panel">
+    <header class="chat-header">
+      <div>
+        <div id="roomTitle" class="title">Select a room</div>
+        <div id="roomSubtitle" class="subtitle text-body-secondary">No room selected</div>
+      </div>
+    </header>
+
+    <div id="messages" class="messages"></div>
+
+    <footer class="composer">
+      <form id="messageForm" class="composer-form">
+        <input id="messageInput" class="composer-input" placeholder="Type a message…" autocomplete="off" />
+        <button class="btn btn-primary" type="submit">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </form>
+    </footer>
+  </section>
+
+  <!-- Right: details -->
+  <aside class="right-rail">
+    <div class="rail-section">
+      <div class="section-title">Room details</div>
+      <div id="roomInfo" class="room-info text-body-secondary small">
+        Select a room to view participants.
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+  const TOKEN = "<%= token %>";
+  const USER  = "<%= user.nickname %>";
+  const USER_ROLE = "<%= user.role %>";
+</script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/client.js"></script>
+
+<%- include("partials/footer") %>

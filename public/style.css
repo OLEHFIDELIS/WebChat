@@ -1,0 +1,68 @@
+body {
+  background: #f5f7fb;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.app-container {
+  display: flex;
+  height: calc(100vh - 56px); /* minus navbar */
+}
+
+.chat-layout {
+  display: flex;
+  flex: 1;
+  height: 100%;
+}
+
+.sidebar {
+  width: 260px;
+  background: #1e1e2f;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.sidebar-header h5 {
+  color: #f0f0f0;
+  margin-bottom: 1rem;
+}
+
+.room-item {
+  padding: 0.6rem 0.8rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.room-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.chat-window {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-left: 1px solid #ddd;
+}
+
+.chat-header {
+  padding: 1rem;
+  border-bottom: 1px solid #ddd;
+  background: #fafafa;
+}
+
+.messages {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.message-form {
+  display: flex;
+  padding: 0.8rem;
+  border-top: 1px solid #ddd;
+  background: #fafafa;
+  gap: 0.5rem;
+}
