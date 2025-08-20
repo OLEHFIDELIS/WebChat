@@ -4,7 +4,7 @@
   "description": "web chat ",
   "main": "index.js",
   "scripts": {
-    "test": "npm run dev",
+    "start": "node index.js",
     "dev": "nodemon index.js"
   },
   "author": "Oleh",
