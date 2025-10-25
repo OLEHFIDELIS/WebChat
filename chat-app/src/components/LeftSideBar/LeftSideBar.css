@@ -82,3 +82,11 @@
     color: #9f9f9f;
     font-size: 11px;
 }
+
+.friends:hover{
+    background-color: #077eff;
+}
+
+.friends:hover span{
+    color: white;
+}
