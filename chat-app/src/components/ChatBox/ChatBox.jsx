@@ -1,15 +1,14 @@
 import React from "react";
 import "./ChatBox.css";
+import assets from "../../assets/assets";
 
 const ChatBox = () => {
   return (
     <div className="chatbox">
-      <div className="chatbox-messages">
-        {/* Messages will be displayed here */}
-      </div>
-      <div className="chatbox-input">
-        <input type="text" placeholder="Type a message..." />
-        <button>Send</button>
+      <div className="chat-user">
+        <img src={assets.profile_img} alt="" />
+        <p>Richard Sanford <img className="dot" src={assets.green_dot} alt="" /></p>
+        <img src={assets.help_icon} alt="" className="help" />
       </div>
     </div>
   );
